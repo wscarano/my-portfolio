@@ -8,17 +8,34 @@ def lambda_handler(event, context):
     sns = boto3.resource('sns')
     topic = sns.Topic('arn:aws:sns:us-east-1:743837219496:deployDemoTopic')
 
+    location = {
+        "bucketName": 'build.demo.sga.guru',
+        "objectKey": 'buildDemo.zip'
+    }
+    print('location: ', location)
+
     try:
+        job = event.get("CodePipeline.job")
+        
+        if job: 
+            for artifact in job["data"]["inputArtifacts"]:
+                if artifact["name"] == "MyAppBuild":
+                    location = artifact["location"]["s3Location"]
+                    
+        print("Building demo from " + str(location))
+        
         demo_bucket = s3.Bucket('demo.sga.guru')
         for obj in demo_bucket.objects.all():
             print(obj.key)
         # demo_bucket.download_file('index.html', '/tmp/index.html')
         
-        build_bucket = s3.Bucket('build.demo.sga.guru')
+        build_bucket = s3.Bucket(location["bucketName"])
+        
+        
         #build_bucket.download_file('buildDemo.zip', '/tmp/buildDemo.zip')
         
         demo_zip = io.BytesIO()
-        build_bucket.download_fileobj('buildDemo.zip', demo_zip)
+        build_bucket.download_fileobj(location["objectKey"], demo_zip)
         
         # with zipfile.ZipFile(demo_zip) as myzip:
         #     for nm in myzip.namelist():
@@ -31,6 +48,10 @@ def lambda_handler(event, context):
         
         topic.publish(Subject="Demo code deployed", Message="Deployed to bucket demo.sga.guru")
         print("Function Completed - Bucket Updated")
+        if job:
+            codepipeline = boto3.client('codepipeline')
+            codepipeline.put_job_sucess_result(jobId=job["id"])
+        
     except:
         print("Function Failed")
         topic.publish(Subject="Demo code deployment Failed", Message="Failed deployment to bucket demo.sga.guru")
