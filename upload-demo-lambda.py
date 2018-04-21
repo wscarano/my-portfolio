@@ -52,8 +52,7 @@ def lambda_handler(event, context):
             codepipeline = boto3.client('codepipeline')
             codepipeline.put_job_sucess_result(jobId=job["id"])
         
-    except:
-        except Exception as e:
+    except Exception as e:
         print("\n upload-demo-lambda error: ",str(e))
         # print("Function Failed")
         # topic.publish(Subject="Demo code deployment Failed", Message="Failed deployment to bucket demo.sga.guru")
