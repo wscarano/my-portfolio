@@ -50,7 +50,7 @@ def lambda_handler(event, context):
         print("Function Completed - Bucket Updated")
         if job:
             codepipeline = boto3.client('codepipeline')
-            codepipeline.put_job_sucess_result(jobId=job["id"])
+            codepipeline.put_job_success_result(jobId=job["id"])
         
     except Exception as e:
         print("\n upload-demo-lambda error: ",str(e))
